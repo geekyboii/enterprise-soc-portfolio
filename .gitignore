@@ -1,0 +1,8 @@
+# Runtime log and SIEM state volumes
+lab-environment/data/
+lab-environment/logs/
+*.log
+*.pcap.tmp
+.DS_Store
+__pycache__/
+*.pyc

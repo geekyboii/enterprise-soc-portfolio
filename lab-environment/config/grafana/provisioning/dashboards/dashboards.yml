@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Northstar-SOC-Dashboards
+    orgId: 1
+    folder: Security Operations
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

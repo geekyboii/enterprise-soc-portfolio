@@ -1,0 +1,71 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://ns-loki-01:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: ns-web-01-access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: northstar-soc
+          env: prod
+          host: ns-web-01
+          tier: tier-1
+          log_type: nginx_access
+          __path__: /var/log/northstar-web/access.log
+
+  - job_name: ns-web-01-error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: northstar-soc
+          env: prod
+          host: ns-web-01
+          tier: tier-1
+          log_type: nginx_error
+          __path__: /var/log/northstar-web/error.log
+
+  - job_name: ns-bastion-01-auth
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: northstar-soc
+          env: prod
+          host: ns-bastion-01
+          tier: tier-1
+          log_type: linux_auth
+          __path__: /var/log/bastion/auth.log
+
+  - job_name: ns-corp-gw-01-firewall
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: northstar-soc
+          env: prod
+          host: ns-corp-gw-01
+          tier: tier-2
+          log_type: firewall
+          __path__: /var/log/corp/firewall.jsonl
+
+  - job_name: ns-corp-gw-01-dns
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: northstar-soc
+          env: prod
+          host: ns-corp-gw-01
+          tier: tier-2
+          log_type: dns
+          __path__: /var/log/corp/dns.jsonl

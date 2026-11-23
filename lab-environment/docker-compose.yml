@@ -1,0 +1,138 @@
+name: northstar-soc-lab
+
+networks:
+  dmz_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.10.0/24
+  corp_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.20.0/24
+  secops_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.30.0/24
+
+volumes:
+  web_logs:
+  bastion_logs:
+  corp_logs:
+  loki_data:
+  grafana_data:
+
+services:
+  # ---------------------------------------------------------
+  # DMZ / PUBLIC EDGE ASSETS (Tier 1)
+  # ---------------------------------------------------------
+  ns-web-01:
+    image: nginx:1.27-alpine
+    container_name: ns-web-01
+    hostname: ns-web-01
+    ports:
+      - "8080:80"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - web_logs:/var/log/northstar-web
+    networks:
+      dmz_net:
+        ipv4_address: 10.10.10.10
+    restart: unless-stopped
+
+  ns-bastion-01:
+    build:
+      context: ./bastion
+    container_name: ns-bastion-01
+    hostname: ns-bastion-01
+    volumes:
+      - bastion_logs:/var/log/bastion
+    networks:
+      dmz_net:
+        ipv4_address: 10.10.10.20
+    restart: unless-stopped
+
+  # ---------------------------------------------------------
+  # CORPORATE NETWORK / TELEMETRY GATEWAY (Tier 2)
+  # ---------------------------------------------------------
+  ns-corp-gw-01:
+    build:
+      context: ./telemetry-gen
+    container_name: ns-corp-gw-01
+    hostname: ns-corp-gw-01
+    environment:
+      - WEB_TARGET=http://10.10.10.10
+    volumes:
+      - corp_logs:/var/log/corp
+    networks:
+      corp_net:
+        ipv4_address: 10.10.20.10
+      dmz_net:
+        ipv4_address: 10.10.10.50
+    depends_on:
+      - ns-web-01
+      - ns-bastion-01
+    restart: unless-stopped
+
+  # ---------------------------------------------------------
+  # SECURITY OPERATIONS / SIEM STACK (Tier 1)
+  # ---------------------------------------------------------
+  ns-loki-01:
+    image: grafana/loki:3.1.1
+    container_name: ns-loki-01
+    hostname: ns-loki-01
+    user: "0:0"
+    command: -config.file=/etc/loki/loki-config.yml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./config/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/tmp/loki
+    networks:
+      secops_net:
+        ipv4_address: 10.10.30.20
+    restart: unless-stopped
+
+  ns-promtail-01:
+    image: grafana/promtail:3.1.1
+    container_name: ns-promtail-01
+    hostname: ns-promtail-01
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./config/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - web_logs:/var/log/northstar-web:ro
+      - bastion_logs:/var/log/bastion:ro
+      - corp_logs:/var/log/corp:ro
+    networks:
+      secops_net:
+        ipv4_address: 10.10.30.10
+    depends_on:
+      - ns-loki-01
+      - ns-web-01
+      - ns-bastion-01
+      - ns-corp-gw-01
+    restart: unless-stopped
+
+  ns-grafana-01:
+    image: grafana/grafana:11.2.0
+    container_name: ns-grafana-01
+    hostname: ns-grafana-01
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=NorthstarSOC!2026
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/soc-overview.json
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      secops_net:
+        ipv4_address: 10.10.30.30
+    depends_on:
+      - ns-loki-01
+    restart: unless-stopped

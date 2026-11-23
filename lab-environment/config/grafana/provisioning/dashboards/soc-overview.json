@@ -1,0 +1,69 @@
+{
+  "id": null,
+  "uid": "northstar-soc-overview",
+  "title": "Northstar FinTech — SOC Telemetry Overview",
+  "tags": ["soc", "siem", "northstar"],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Log Ingestion Volume by Source (Blind-Spot Monitor)",
+      "datasource": { "type": "loki", "uid": "northstar-loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (log_type) (count_over_time({job=\"northstar-soc\"}[1m]))",
+          "legendFormat": "{{log_type}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Web Portal (ns-web-01) HTTP Status Codes",
+      "datasource": { "type": "loki", "uid": "northstar-loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (status) (count_over_time({host=\"ns-web-01\", log_type=\"nginx_access\"} | json [1m]))",
+          "legendFormat": "HTTP {{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "logs",
+      "title": "Linux Admin Bastion (ns-bastion-01) — Auth & Sudo Stream",
+      "datasource": { "type": "loki", "uid": "northstar-loki" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "{host=\"ns-bastion-01\", log_type=\"linux_auth\"}",
+          "refId": "A"
+        }
+      ],
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending" }
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "Perimeter Firewall & DNS (ns-corp-gw-01) — Live Telemetry",
+      "datasource": { "type": "loki", "uid": "northstar-loki" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "{host=\"ns-corp-gw-01\"}",
+          "refId": "A"
+        }
+      ],
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending" }
+    }
+  ]
+}
