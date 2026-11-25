@@ -1,0 +1,6 @@
+# Ensure Linux container scripts and configs keep LF line endings on Windows checkouts
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.conf text eol=lf
+*.py text eol=lf

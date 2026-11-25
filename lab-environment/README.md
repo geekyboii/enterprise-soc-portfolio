@@ -1,6 +1,6 @@
 # Northstar FinTech — Live Enterprise SOC Lab
 
-This directory contains a self-contained, reproducible Docker Compose enterprise simulation used to practice and validate real-world Tier 1 / Tier 2 SOC workflows.
+This directory contains a self-contained, reproducible Docker Compose enterprise simulation used to practice and validate real-world Tier 1 / Tier 2 SOC workflows on **Windows 11**, **macOS**, or **Linux**.
 
 ## Architecture
 
@@ -13,21 +13,32 @@ This directory contains a self-contained, reproducible Docker Compose enterprise
 | `ns-loki-01` | SecOps (`10.10.30.20`) | Central SIEM Log Engine (`Loki 3.1`) | Indexes telemetry for LogQL queries |
 | `ns-grafana-01` | SecOps (`10.10.30.30`) | SOC SIEM Console & Dashboards (`Grafana 11.2`) | Pre-provisioned SOC Overview Dashboard |
 
-## Quick Commands
+## Quick Start (Windows 11 PowerShell / macOS / Linux)
+
+**Prerequisites:** [Git](https://git-scm.com/downloads) and [Docker Desktop](https://www.docker.com/products/docker-desktop/) (running).
+
+```powershell
+# 1. Start the entire enterprise lab and SIEM stack
+docker compose -f lab-environment/docker-compose.yml up -d --build
+
+# 2. Check that all 6 containers are running
+docker compose -f lab-environment/docker-compose.yml ps
+
+# 3. Open the live Grafana SIEM Console in your browser:
+#    http://localhost:3000
+
+# 4. Stop the lab when finished (keeps your SIEM data saved)
+docker compose -f lab-environment/docker-compose.yml down
+```
+
+## Optional Linux/WSL Helper CLI
+
+If running inside **WSL 2 (Ubuntu)**, macOS, or Linux:
 
 ```bash
-# Start the entire enterprise lab and SIEM stack
 ./lab-environment/soc-lab.sh up
-
-# Check container health and SIEM readiness
 ./lab-environment/soc-lab.sh status
-
-# Verify end-to-end log onboarding across all assets
 ./lab-environment/soc-lab.sh verify-onboarding
-
-# Run a live SIEM LogQL hunt query from the CLI
 ./lab-environment/soc-lab.sh query '{host="ns-web-01", log_type="nginx_access"} | json' 10
-
-# Stop the lab cleanly
 ./lab-environment/soc-lab.sh down
 ```
